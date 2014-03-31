@@ -18,10 +18,6 @@ object SllParser extends StandardTokenParsers with ImplicitConversions {
   
   def gDef: Parser[Definition] =
     funcName ~ ("(" ~> pat) ~ (gDefVars <~ ")") ~ ("=" ~> expr) ^^ GDef 
-//    {
-//    case fname ~ pat ~ Some(vars) ~ body => GDef(fname, pat, vars, body)
-//    case fname ~ pat ~ None ~ body => GDef(fname, pat, List(), body)
-//  }
   
   def gDefVars = opt("," ~> repsep(variable, ",")) ^^ {
     case Some(v) => v
@@ -42,7 +38,7 @@ object SllParser extends StandardTokenParsers with ImplicitConversions {
     
   def variable: Parser[Var] = ident ^^ Var
   
-  def fCall: Parser[Expr] = funcName ~ ("(" ~> repsep(variable, ",") <~ ")") ^^ FCall
+  def fCall: Parser[Expr] = funcName ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ FCall
   
   def ctor: Parser[Expr] = ctorName ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ Ctor
   
