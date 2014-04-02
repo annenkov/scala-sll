@@ -5,14 +5,13 @@ import PartialFunction._
 
 object SllEval {
   
-  def eval(p: List[Definition])(t: Expr): Expr =  {println(t);t match {
+  def eval(p: List[Definition])(t: Expr): Expr =  t match {
     case fcall @ FCall(name, args) => eval(p)(unfold(fcall, p))
     case Ctor(name, args) => Ctor(name, args.map(eval(p)))
-    case Var(_) => error("Variables are not allowed in tasks")}
+    case Var(_) => error("Variables are not allowed in tasks")
   }
 
-  def unfold(funCall: FCall, p: List[Definition]): Expr = {
-    println(getFuncDef(p, funCall.name, funCall.args))
+  def unfold(funCall: FCall, p: List[Definition]): Expr =
        getFuncDef(p, funCall.name, funCall.args) match {
         case Some(FDef(name, params, body)) =>
           substitute(Map(params.map(_.name).zip(funCall.args): _*))(body)
@@ -24,7 +23,7 @@ object SllEval {
                 case (fcall @ FCall(_, _)) :: _args => FCall(funCall.name, unfold(fcall, p) :: _args)
                 case _ => error(s"Unknown function: ${funCall.name}")}                              
         }
-  }
+  
   def substitute(ctx: Map[String, Expr])(t: Expr): Expr = t match {
     case FCall(name, body) => FCall(name, body map substitute(ctx))
     case Ctor(name, body) => Ctor(name, body map substitute(ctx))

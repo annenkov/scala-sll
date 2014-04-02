@@ -93,4 +93,16 @@ class EvalTests extends FunSuite {
     assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
       == SllParser.parseAll(SllParser.ctor, "S(S(Z()))"))
   }
+  
+  test("Laziness test") {
+    val prog =
+      """
+      head(Cons(x, xs)) = x
+      tail(Cons(x, xs)) = xs
+      zeros() = Cons(Z(), zeros())
+      """
+    val expr = "head(zeros())"
+    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+      == SllParser.parseAll(SllParser.ctor, "Z()"))
+  }
 }
