@@ -38,16 +38,17 @@ object SllParser extends StandardTokenParsers with ImplicitConversions {
     
   def variable: Parser[Var] = ident ^^ Var
   
-  def fCall: Parser[Expr] = funcName ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ FCall
+  def fCall: Parser[FCall] = funcName ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ FCall
   
   def ctor: Parser[Expr] = ctorName ~ ("(" ~> repsep(expr, ",") <~ ")") ^^ Ctor
   
-  def parseAll[T](p: Parser[T], in: String): ParseResult[T] = {
-    phrase(p)(new lexical.Scanner(in))
-  }
-  
-  def parseDefs(p: String) = parseAll(start, p) match {
+  def parseAll[T](p: Parser[T], in: String) = {
+    phrase(p)(new lexical.Scanner(in)) match {
      case t if t.successful => t.get
      case t => error(t.toString)
      }
+  }
+  
+  def parseDefs(p: String) = parseAll(start, p)
+  def parseFCall(p: String) = parseAll(fCall, p)
 }

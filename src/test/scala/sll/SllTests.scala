@@ -66,19 +66,31 @@ class SubstitutionTest extends FunSuite {
       f(x) = x      
       """
     val expr = "f(Z())"
-      assert(SllEval.unfold(SllParser.parseAll(SllParser.fCall, expr).get,SllParser.parseDefs(prog))
+      assert(SllEval.unfold(SllParser.parseFCall(expr), SllParser.parseDefs(prog))
           == Ctor("Z", List()))
   }  
 }
 
 class EvalTests extends FunSuite {
-  test("Eval f-functions:") {
+  test("Eval f-functions") {
     val prog =
       """
       plusOne(x) = S(x)      
       """
     val expr = "plusOne(plusOne(Z()))"
-    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseAll(SllParser.fCall, expr).get)
-      == SllParser.parseAll(SllParser.ctor, "S(S(Z()))").get)
+    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+      == SllParser.parseAll(SllParser.ctor, "S(S(Z()))"))
+  }
+  
+  test("Eval nested (f-func in g-func) call") {
+    val prog =
+      """
+      plusOne(x) = S(x)
+      add(Z(), x) = x
+	  add(S(x), y) = S(add(x,y))
+      """
+    val expr = "add(plusOne(Z()), S(Z()))"
+    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+      == SllParser.parseAll(SllParser.ctor, "S(S(Z()))"))
   }
 }
