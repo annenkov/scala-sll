@@ -39,25 +39,25 @@ class SubstitutionTest extends FunSuite {
   test("Substitution x -> Z() in f(x)") {
     val ctx = Map("x" -> Ctor("Z", List()))
     val body = FCall("f", List(Var("x")))
-    assert(SllEval.substitute(ctx)(body) == FCall("f",List(Ctor("Z",List()))))
+    assert(Utils.substitute(ctx)(body) == FCall("f",List(Ctor("Z",List()))))
   }
   
   test("Substitution: x -> Z() in f(x,y)") {
     val ctx = Map("x" -> Ctor("Z", List()))
     val body = FCall("f", List(Var("x"), Var("y")))
-    assert(SllEval.substitute(ctx)(body) == FCall("f",List(Ctor("Z",List()), Var("y"))))
+    assert(Utils.substitute(ctx)(body) == FCall("f",List(Ctor("Z",List()), Var("y"))))
   }
   
   test("Substitution: x -> Z() in Z(f(x))") {
     val ctx = Map("x" -> Ctor("Z", List()))
     val body = Ctor("Z", List(FCall("f", List(Var("x")))))
-    assert(SllEval.substitute(ctx)(body) == Ctor("Z", List(FCall("f",List(Ctor("Z",List()))))))
+    assert(Utils.substitute(ctx)(body) == Ctor("Z", List(FCall("f",List(Ctor("Z",List()))))))
   }
   
   test("Substitution: x -> Z() in f(x,x)") {
     val ctx = Map("x" -> Ctor("Z", List()))
     val body = FCall("f", List(Var("x"), Var("x")))
-    assert(SllEval.substitute(ctx)(body) == FCall("f",List(Ctor("Z",List()), Ctor("Z",List()))))
+    assert(Utils.substitute(ctx)(body) == FCall("f",List(Ctor("Z",List()), Ctor("Z",List()))))
   }
   
   test("Unfold func call") {
@@ -66,7 +66,7 @@ class SubstitutionTest extends FunSuite {
       f(x) = x      
       """
     val expr = "f(Z())"
-      assert(SllEval.unfold(SllParser.parseFCall(expr), SllParser.parseDefs(prog))
+      assert(Utils.unfold(SllParser.parseFCall(expr), SllParser.parseDefs(prog))
           == Ctor("Z", List()))
   }  
 }
@@ -78,7 +78,7 @@ class EvalTests extends FunSuite {
       plusOne(x) = S(x)      
       """
     val expr = "plusOne(plusOne(Z()))"
-    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+    assert(BigStep.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
       == SllParser.parseAll(SllParser.ctor, "S(S(Z()))"))
   }
   
@@ -90,9 +90,9 @@ class EvalTests extends FunSuite {
 	  add(S(x), y) = S(add(x,y))
       """
     val expr = "add(plusOne(Z()), S(Z()))"
-    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+    assert(BigStep.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
       == SllParser.parseAll(SllParser.ctor, "S(S(Z()))"))
-  }
+  }  
   
   test("Laziness test") {
     val prog =
@@ -102,7 +102,19 @@ class EvalTests extends FunSuite {
       zeros() = Cons(Z(), zeros())
       """
     val expr = "head(zeros())"
-    assert(SllEval.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+    assert(BigStep.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
       == SllParser.parseAll(SllParser.ctor, "Z()"))
+  }
+  
+  test("Big-step vs small-step") {
+    val prog =
+      """
+      plusOne(x) = S(x)
+      add(Z(), x) = x
+	  add(S(x), y) = S(add(x,y))
+      """
+    val expr = "add(plusOne(Z()), S(Z()))"
+    assert(BigStep.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr))
+      == SmallStep.eval(SllParser.parseDefs(prog))(SllParser.parseFCall(expr)))
   }
 }

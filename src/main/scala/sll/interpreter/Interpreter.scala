@@ -3,14 +3,34 @@ package sll.interpreter
 import sll.syntax._
 import PartialFunction._
 
-object SllEval {
+object BigStep {
   
   def eval(p: List[Definition])(t: Expr): Expr =  t match {
-    case fcall @ FCall(name, args) => eval(p)(unfold(fcall, p))
+    case fcall @ FCall(name, args) => eval(p)(Utils.unfold(fcall, p))
     case Ctor(name, args) => Ctor(name, args.map(eval(p)))
     case Var(_) => error("Variables are not allowed in tasks")
-  }
+  }  
+}
 
+object SmallStep {
+  
+  def smallStep(p: List[Definition])(t: Expr): Expr = t match {
+    case fcall @ FCall(name, args) => Utils.unfold(fcall, p)
+    case Ctor(name, args@ _ :: _) => Ctor(name, args.map(smallStep(p)))
+    case Var(_) => error("Variables are not allowed in tasks")
+    case _ => throw new NoRulesToApply(t)
+  }
+  
+  def eval(p: List[Definition])(t: Expr): Expr =
+    try {
+    	val t1 = smallStep(p)(t)
+        eval(p)(t1)
+    } catch {
+      case _: NoRulesToApply => t
+    }
+}
+
+object Utils {
   def unfold(funCall: FCall, p: List[Definition]): Expr =
        getFuncDef(p, funCall.name, funCall.args) match {
         case Some(FDef(name, params, body)) =>
@@ -47,3 +67,5 @@ object SllEval {
     }    
   }
 }
+
+class NoRulesToApply(t: Expr) extends Exception(s"No rules to apply to ${t}") 
