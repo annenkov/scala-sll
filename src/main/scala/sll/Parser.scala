@@ -5,18 +5,18 @@ import scala.util.parsing.combinator.ImplicitConversions
 import scala.util.parsing.combinator.token.StdTokens
 import sll.syntax._
 
-object SllParser extends StandardTokenParsers with ImplicitConversions {
+abstract class SllParser extends StandardTokenParsers with ImplicitConversions {
   lexical.delimiters += (",", "=", "(", ")")
   lexical.reserved += ("program")
   
-  def start: Parser[List[Definition]] = rep(definition)
+  def start: Parser[List[Definition]]
   
-  def definition = fDef | gDef
+  def definition: Parser[Definition]
   
-  def fDef: Parser[Definition] =
+  def fDef: Parser[FunDef] =
     funcName ~ ("(" ~> repsep(variable, ",") <~ ")") ~ ("=" ~> expr) ^^ FDef
   
-  def gDef: Parser[Definition] =
+  def gDef: Parser[FunDef] =
     funcName ~ ("(" ~> pat) ~ (gDefVars <~ ")") ~ ("=" ~> expr) ^^ GDef 
   
   def gDefVars = opt("," ~> repsep(variable, ",")) ^^ {
@@ -49,6 +49,36 @@ object SllParser extends StandardTokenParsers with ImplicitConversions {
      }
   }
   
-  def parseDefs(p: String) = parseAll(start, p)
-  def parseFCall(p: String) = parseAll(fCall, p)
+  def parseDefs(p: String): List[Definition]
+  def parseFCall(p: String): FCall = parseAll(fCall, p)
+}
+
+object UntypedSllParser extends SllParser {
+  def start: Parser[List[FunDef]] = rep(definition)
+  def definition = gDef | fDef
+  def parseDefs(p: String): List[FunDef] = parseAll(start, p)  
+}
+
+object TypedSllParser extends SllParser {
+  lexical.delimiters += ("|", ":", "->")
+  lexical.reserved += ("data")
+  
+  def typeName = 
+    elem("Type name", x => x.isInstanceOf[lexical.Identifier] && x.chars.head.isUpper) ^^
+    {_.chars}
+  
+  def start: Parser[List[Definition]] = rep(definition)
+  
+  def definition = gDef | fDef | typeDef | funType
+  
+  def parseDefs(p: String): List[Definition] = parseAll(start, p)  
+  
+  def typeDef: Parser[TypeDef] = ("data" ~> typeName) ~ ("=" ~> repsep(typeCtor, "|")) ^^ SllType 
+  
+  def typeCtor: Parser[TypeCtor] = ctorName ~ ("(" ~> repsep(typeName, ",") <~ ")") ^^ TypeCtor
+  
+  def localVarTypes: Parser[List[String]] = ("(" ~> repsep(typeName, ",") <~ ")") | oneVarType
+  def oneVarType: Parser[List[String]] = typeName ^^ (e => List(e))
+  
+  def funType: Parser[FunType] = (funcName <~ ":") ~ (localVarTypes <~ "->") ~ typeName ^^ FunType 
 }

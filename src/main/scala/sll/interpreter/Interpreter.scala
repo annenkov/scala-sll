@@ -5,7 +5,7 @@ import PartialFunction._
 
 object BigStep {
   
-  def eval(p: List[Definition])(t: Expr): Expr =  t match {
+  def eval(p: List[FunDef])(t: Expr): Expr =  t match {
     case fcall @ FCall(name, args) => eval(p)(Utils.unfold(fcall, p))
     case Ctor(name, args) => Ctor(name, args.map(eval(p)))
     case Var(_) => error("Variables are not allowed in tasks")
@@ -14,14 +14,14 @@ object BigStep {
 
 object SmallStep {
   
-  def smallStep(p: List[Definition])(t: Expr): Expr = t match {
+  def smallStep(p: List[FunDef])(t: Expr): Expr = t match {
     case fcall @ FCall(name, args) => Utils.unfold(fcall, p)
     case Ctor(name, args@ _ :: _) => Ctor(name, args.map(smallStep(p)))
     case Var(_) => error("Variables are not allowed in tasks")
     case _ => throw new NoRulesToApply(t)
   }
   
-  def eval(p: List[Definition])(t: Expr): Expr =
+  def eval(p: List[FunDef])(t: Expr): Expr =
     try {
     	val t1 = smallStep(p)(t)
         eval(p)(t1)
@@ -31,7 +31,7 @@ object SmallStep {
 }
 
 object Utils {
-  def unfold(funCall: FCall, p: List[Definition]): Expr =
+  def unfold(funCall: FCall, p: List[FunDef]): Expr =
        getFuncDef(p, funCall.name, funCall.args) match {
         case Some(FDef(name, params, body)) =>
           substitute(Map(params.map(_.name).zip(funCall.args): _*))(body)
@@ -51,13 +51,13 @@ object Utils {
     case v @ Var(_) => v
   }
   
-  def getFuncDef(p: List[Definition], name: String, args: List[Expr]): Option[Definition] = 
+  def getFuncDef(p: List[FunDef], name: String, args: List[Expr]): Option[FunDef] = 
     getFFuncDef(p, name).orElse(getGFuncDef(p, name, args)) 
 
-  def getFFuncDef(p: List[Definition], name: String): Option[Definition] =
+  def getFFuncDef(p: List[FunDef], name: String): Option[FunDef] =
     p.find(d => cond(d){case FDef(_name, params, body) => name == _name})
 
-  def getGFuncDef(p: List[Definition], name: String, args: List[Expr]): Option[Definition] = {
+  def getGFuncDef(p: List[FunDef], name: String, args: List[Expr]): Option[FunDef] = {
     args match {
       case Ctor(cName, cArgs)::_ => p.find(d => cond(d) {
         case GDef(_name, Pat(pName, pArgs), params, body) => 
