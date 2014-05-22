@@ -105,8 +105,9 @@ object EnvUtils {
       })
 }
 
-class NoSuchTypeException(t: String) extends Exception(s"Undefined type ${t}")
+class TypingException(msg: String) extends Exception(msg)
+class NoSuchTypeException(t: String) extends TypingException(s"Undefined type ${t}")
 class TypeMismatchException(expected: String, actual: String)
-       extends Exception(s"Type mismatch: expected ${expected}, given ${actual}")
+       extends TypingException(s"Type mismatch: expected ${expected}, given ${actual}")
 class ArityMismatchException(name: String, inTypeDecl: Int, inFunDecl: Int)
-       extends Exception(s"Arity mismatch for ${name}. In type declaration: ${inTypeDecl} arguments, in function declaration: ${inFunDecl}")
+       extends TypingException(s"Arity mismatch for ${name}. In type declaration: ${inTypeDecl} arguments, in function declaration: ${inFunDecl}")
