@@ -14,6 +14,6 @@ import sll.tests.gen.ASTGen._
 
 class PropertiesTest extends FunSuite {
   test("Parse(PrettyPrint(AST) == AST)") {
-    check(Prop.forAll {fCall: FCall => TypedSllParser.parseFCall(PP.showExpr(fCall)) == fCall})
+    check(Prop.forAll {e: Expr => TypedSllParser.parseExpr(PP.showExpr(e)) == e})
     }
 }

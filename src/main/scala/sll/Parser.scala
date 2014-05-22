@@ -51,6 +51,7 @@ abstract class SllParser extends StandardTokenParsers with ImplicitConversions {
   
   def parseDefs(p: String): List[Definition]
   def parseFCall(p: String): FCall = parseAll(fCall, p)
+  def parseExpr(p: String): Expr = parseAll(expr, p)
 }
 
 object UntypedSllParser extends SllParser {
