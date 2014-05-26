@@ -14,9 +14,9 @@ object PP {
 	  case FDef(name, params, body) => s"${name}${argsInParens(showExpr, params)} = ${showExpr(body)}"
 	  case GDef(name, pat, List(), body) => s"${name}(${showPat(pat)}) = ${showExpr(body)}"
 	  case GDef(name, pat, params, body) =>
-	    s"${name}${argsInParens(args=List(showPat(pat), argsList(showExpr, params)))}) = ${showExpr(body)}"
-	  case SllType(name, ctors) => s"${name} = ${repsep(showTypeCtor, "|")(ctors)}"
-	  case FunType(name, dom, retType) => s"${name} = ${argsInParens(args=dom)} -> ${retType}"
+	    s"${name}${argsInParens(args=List(showPat(pat), argsList(showExpr, params)))} = ${showExpr(body)}"
+	  case SllType(name, ctors) => s"data ${name} = ${repsep(showTypeCtor, "|")(ctors)}"
+	  case FunType(name, dom, retType) => s"${name}: ${argsInParens(args=dom)} -> ${retType}"
 	}
 	
 	def showTypeCtor(tc: TypeCtor) = tc.name ++ argsInParens(args=tc.typeArgs)
